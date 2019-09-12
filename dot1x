@@ -1,0 +1,57 @@
+MSK-Master Session Key ( or AAA Key):
+Key information that is jointly negotiated between the Supplicant & Authentication Server. This key information is transported via a secure channel from Authenticating Server to Authenticator.
+
+PMK-Pairwise Master Key:
+PMK is derived from MSK seeding material. PMK is first 256bits (0-255) of MSK. It can be derived from an EAP method or directly from a PresharedKey(PSK).
+
+GMK-Group Master Key:
+GMK is randomly created on Authenticator & refresh it in configured time interval to reduce the risk of GMK being compromised.
+
+PTK-Pairwise Transient Key:
+A value derived from PMK,Authenicator nonce(Anonce),Supplicant nonce(Snonce), Authenticator Address, Supplicant Address. This is used to encrypt all unicast transmission between client & an AP. PTK consist of 5 different keys
+
+1. KCK-Key Confirmation Key-used to provide data integrity during 4 -Way Handshake & Group Key Handshake.
+2. KEK – Key Encryption Key– used by EAPOL-Key frames to provide data privacy during 4-Way Handshake & Group Key Handshake.
+3. Temporal Key – used to encrypt & decrypt MSDU of 802.11 data frames between supplicant & authenticator
+4. Temporal MIC-1
+5. Temporal MIC-2
+
+GTK-Group Temporal Key:
+GTK is used to encrypt all broadcast/multicast transmission between an AP & multiple client statsions. GTK is derived on Authenticator & sending to supplicant during 4-Way Handshake (M3)
+
+4-Way handshake utilizing EAPOL-Key frames initiated by the Authenticator to do the following.
+1. Confirm that live peer holds PMK
+2. Confirm that PMK is current.
+3. Derive a fresh PTK from PMK & Install the pairwise encryption & integrity keys into 802.11
+4. Transport the GTK & GTK sequence number from Authenticator to Supplicant & install them in Supplicant & AP(if not already installed)
+5. Confirm cipher suite selection.
+
+If it is PSK,  4 way handshak starts immediately after Open System Authentication & Association state finish as you can see below.
+
+CWSP-4-Way-00If it is 802.1X/EAP, then 4 way handshake starts when EAP Authentication finished.
+
+CWSP-4-Way-02Below figure shows the steps involved in 4-Way handshake process. This CWNP video explain well this process & have a look on it before go into details.
+
+CWSP-4-Way-00Here is the details about each step. You can filter EAPOL-Key messages using “eapol.keydes.type == 2” wireshark display filter.
+
+Message 1 (M1)
+* Authenticator sends EAPOL-Key frame containing an ANonce(Authenticator nonce) to supplicant.
+* With this information, supplicant have all  necessary input to generate PTK using pseudo-random function(PRF)
+
+CWSP-4-Way-01Message 2 (M2)
+* Supplicant sends an EAPOL-Key frame containing SNonce to the Authenticator.
+* Now authenticator has all the inputs to create PTK.
+* Supplicant also sent RSN IE capabilities to Authenticator & MIC
+* Authenticator derive PTK & validate the MIC as well.
+
+CWSP-4-Way-04Message 3 (M3)
+* If necessary, Authenticator will derive GTK from GMK.
+* Authenticator sends EAPOL-Key frame containing ANonce, RSN-IE & a MIC.
+* GTK will be delivered (encrypted with PTK) to supplicant.
+* Message to supplicant to install temporal keys.
+
+CWSP-4-Way-05Message 4 (M4)
+* Supplicant sends final EAPOL-Key frame to authenticator to confirm temporal keys have been installed.
+
+CWSP-4-Way-06From this point onwards data frame MSDU will be encrypted using PTK or GTK (depending upon unicast or multicast/broadcast frame)
+
